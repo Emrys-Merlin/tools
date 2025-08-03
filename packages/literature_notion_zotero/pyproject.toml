@@ -1,0 +1,52 @@
+[project]
+name = "lit-mover"
+version = "0.1.0"
+description = "Move my literature list from notion to zotero"
+readme = "README.md"
+authors = [{ name = "Tim Adler", email = "tim@emrys-merlin.de" }]
+requires-python = ">=3.12"
+dependencies = [
+    "notion-client>=2.4.0",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "typer>=0.16.0",
+    "polars>=1.31.0",
+    "pyzotero>=1.6.11",
+    "loguru>=0.7.3",
+    "tqdm>=4.67.1",
+]
+
+[project.scripts]
+lit-mover = "lit_mover.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "ipython>=9.4.0",
+    "pre-commit>=4.2.0",
+    "pyright>=1.1.402",
+    "pytest>=8.4.1",
+    "ruff>=0.12.2",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # isort
+    "I",
+    # "DOC",
+]
