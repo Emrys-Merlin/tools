@@ -59,7 +59,7 @@ def loop_body(
     logger.info(
         f"Enough GPUs available ({n_free} / {n_gpus}). "
         f'Storing list in ENV variable "{env_variable_name}". '
-        f"Executing `exec`"
+        f"Executing `{command}`"
     )
     env = os.environ.copy()
     env[env_variable_name] = ",".join(str(i) for i in free_gpus[:n_gpus])
