@@ -62,7 +62,7 @@ def loop_body(
         f"Executing `exec`"
     )
     env = os.environ.copy()
-    env[env_variable_name] = ",".join(str(i) for i in free_gpus)
+    env[env_variable_name] = ",".join(str(i) for i in free_gpus[:n_gpus])
     os.execvpe(command[0], command[0:], env)
 
 
@@ -78,7 +78,7 @@ def run(
         Option(
             "--sleep",
             "-s",
-            help="Sleep interval between pools in min.",
+            help="Sleep interval between polls in min.",
         ),
     ] = 5.0,
     env_variable_name: Annotated[
@@ -101,6 +101,9 @@ def run(
     The list of free GPUs will be stored in an ENV variable (CUDA_VISIBLE_DEVICES by default)
     before launching the executable. So, the executable can pick up on which devices are free.
 
+    Note: There is a chance for a raise condition, where another process picks up the free GPU(s)
+    before the command is launched.
+
     Example usage:
         ```
         poll-gpus.py -n 2 -s 1 -- printenv CUDA_VISIBLE_DEVICES
@@ -109,6 +112,8 @@ def run(
 
         This will poll every minute for 2 free GPUs before printing the updated ENV variable.
         The second launches an updated shell before printing if you need it.
+        Note that you need single quotes to avoid variable expansion through the current shell
+        (second example).
     """
     sleep_sec = sleep_min * 60
     level = "DEBUG" if verbose else "INFO"
@@ -126,14 +131,18 @@ def run(
     )
     logger.info("Interrupt with Ctrl+C.")
 
-    while True:
-        loop_body(
-            command,
-            n_gpus,
-            verbose,
-            env_variable_name,
-        )
-        sleep(sleep_sec)
+    try:
+        while True:
+            loop_body(
+                command,
+                n_gpus,
+                verbose,
+                env_variable_name,
+            )
+            sleep(sleep_sec)
+    except KeyboardInterrupt:
+        logger.info("Stopped.")
+        exit(130)
 
 
 if __name__ == "__main__":
