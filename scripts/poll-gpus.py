@@ -45,14 +45,14 @@ def check_available_gpus(verbose: bool) -> list[int]:
 
 
 def loop_body(
-    exec: str,
+    command: list[str],
     n_gpus: int,
     verbose: bool,
     env_variable_name: str,
 ) -> None:
     free_gpus = check_available_gpus(verbose)
 
-    if n_free := len(free_gpus) < n_gpus:
+    if (n_free := len(free_gpus)) < n_gpus:
         logger.info(f"Not enough GPUs available: {n_free} / {n_gpus}")
         return
 
@@ -63,13 +63,12 @@ def loop_body(
     )
     env = os.environ.copy()
     env[env_variable_name] = ",".join(str(i) for i in free_gpus)
-    exec_list = exec.split()
-    os.execvpe(exec_list[0], exec_list[0:], env)
+    os.execvpe(command[0], command[0:], env)
 
 
 @main.command()
 def run(
-    exec: str,
+    command: list[str],
     n_gpus: Annotated[
         int,
         Option("--n-gpus", "-n", help="The required number of free GPUs."),
@@ -104,10 +103,12 @@ def run(
 
     Example usage:
         ```
-        poll-gpus.py -n 2 -s 1 -- "echo $CUDA_VISIBLE_DEVICES"
+        poll-gpus.py -n 2 -s 1 -- printenv CUDA_VISIBLE_DEVICES
+        poll-gpus.py -n 2 -s 1 -- sh -c 'echo $CUDA_VISIBLE_DEVICES'
         ```
 
-        This will poll every minute for 2 free GPUs before launching `echo CUDA_VISIBLE_DEVICES`
+        This will poll every minute for 2 free GPUs before printing the updated ENV variable.
+        The second launches an updated shell before printing if you need it.
     """
     sleep_sec = sleep_min * 60
     level = "DEBUG" if verbose else "INFO"
@@ -127,7 +128,7 @@ def run(
 
     while True:
         loop_body(
-            exec,
+            command,
             n_gpus,
             verbose,
             env_variable_name,
